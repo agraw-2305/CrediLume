@@ -24,6 +24,8 @@ Optional:
 
 - `GEMINI_API_KEY` environment variable (enables AI advice)
 
+Note: The app works without any Gemini key. If no key is set, AI endpoints return built-in fallback guidance.
+
 ## Quick start (Windows)
 
 1. Create and activate a virtual environment
@@ -41,6 +43,8 @@ Optional:
    - PowerShell:
      - `$env:GEMINI_API_KEY="YOUR_KEY_HERE"`
 
+    Compatibility: `GOOGLE_API_KEY` is also accepted, but `GEMINI_API_KEY` is recommended.
+
    Keep keys out of git history. Do not commit API keys.
 
 4. Run the server
@@ -49,6 +53,10 @@ Optional:
    - Open `http://127.0.0.1:5000`
 
 Tip: You can also use `run.ps1` / `run.bat` if you prefer one-click start.
+
+## Hackathon submission (ZIP)
+
+If you're submitting as a zip file, see `SUBMISSION.md` for exactly what to include and the judge run steps.
 
 ## Deploy (public URL)
 

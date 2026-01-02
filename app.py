@@ -365,7 +365,8 @@ def _predict_payload(form):
         suggestions.insert(0, "Keep EMIs within comfort and maintain an emergency buffer")
 
     # Optional Gemini-enhanced explanations (REST; does not affect decision)
-    api_key = os.getenv("GOOGLE_API_KEY")
+    # Prefer GEMINI_API_KEY (documented), but allow GOOGLE_API_KEY for compatibility.
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if api_key:
         try:
             model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
@@ -913,7 +914,20 @@ Provide helpful, specific advice:"""
                 print(f"Gemini chat error: {e}")
         
         # Enhanced fallback responses
-        fallback_responses = _get_smart_fallback(user_message, loan_amount, tenure_months, interest_rate, income, currency, calculated_emi, total_interest, loan_type, age, gender)
+        fallback_responses = _get_smart_fallback(
+            user_message,
+            loan_amount,
+            tenure_months,
+            interest_rate,
+            income,
+            credit_score,
+            currency,
+            calculated_emi,
+            total_interest,
+            loan_type,
+            age,
+            gender,
+        )
         
         return jsonify({
             "ok": True,
@@ -924,7 +938,7 @@ Provide helpful, specific advice:"""
         return jsonify({"ok": False, "error": str(e)}), 400
 
 
-def _get_smart_fallback(message: str, loan_amount: float, tenure: int, rate: float, income: float, currency: str, emi: float, total_interest: float, loan_type: str = 'personal', age: int = 0, gender: str = 'not specified') -> str:
+def _get_smart_fallback(message: str, loan_amount: float, tenure: int, rate: float, income: float, credit_score: int, currency: str, emi: float, total_interest: float, loan_type: str = 'personal', age: int = 0, gender: str = 'not specified') -> str:
     """Generate smart fallback responses based on keywords and user's loan data."""
     
     message_lower = message.lower()
@@ -1120,8 +1134,8 @@ Best for: Variable income, other investments
 • 650-699 (Fair): +0.5-1% higher rates  
 • Below 650: May face rejection or +2-3% rates
 
-**Your Score: {int(context.get('credit_score', 700))}**
-{"✅ Great! You qualify for competitive rates." if context.get('credit_score', 700) >= 750 else "💡 Improving to 750+ could save " + currency + " " + str(int(total_interest * 0.1)) + "+ in interest!"}
+**Your Score: {int(credit_score)}**
+{"✅ Great! You qualify for competitive rates." if credit_score >= 750 else "💡 Improving to 750+ could save " + currency + " " + str(int(total_interest * 0.1)) + "+ in interest!"}
 
 **Quick Score Boosters:**
 1. Pay all bills on time (35% of score)
