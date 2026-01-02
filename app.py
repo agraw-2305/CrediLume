@@ -17,6 +17,8 @@ if GEMINI_API_KEY:
 
 app = Flask(__name__)
 
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Lazy-loaded ML artifacts (keeps server startup fast and avoids scipy/sklearn import stalls
 # during Flask's debug reloader re-import).
 model = None
@@ -33,11 +35,41 @@ def _load_artifacts():
         raise RuntimeError(_ARTIFACT_ERROR)
 
     try:
-        model = pickle.load(open("loan_model.pkl", "rb"))
-        FEATURE_NAMES = pickle.load(open("features.pkl", "rb"))
+        model_path = os.path.join(_BASE_DIR, "loan_model.pkl")
+        features_path = os.path.join(_BASE_DIR, "features.pkl")
+
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+        with open(features_path, "rb") as f:
+            FEATURE_NAMES = pickle.load(f)
     except Exception as e:
         _ARTIFACT_ERROR = f"Failed to load ML artifacts: {e}"
         raise RuntimeError(_ARTIFACT_ERROR)
+
+
+def _safe_error_payload(form, message: str):
+    # Provide defaults required by templates when `prediction_text` is set.
+    return {
+        "prediction_text": f"Error: {message}",
+        "health_score": 0,
+        "reasons": [],
+        "suggestions": [],
+        "advisor_summary": None,
+        "advisor_advice": [],
+        "advisor_warnings": [],
+        "dti_percent": None,
+        # Echo back user inputs where possible.
+        "loan_amount": form.get("loan_amount", ""),
+        "loan_term": form.get("loan_term", ""),
+        "income_annum": form.get("income_annum", ""),
+        "cibil_score": form.get("cibil_score", ""),
+        "interest_rate": form.get("interest_rate", "10"),
+        "existing_emi": form.get("existing_emi", "0"),
+        "loan_type": form.get("loan_type", "personal"),
+        "applicant_profile": form.get("applicant_profile", "salaried"),
+        "term_unit": form.get("term_unit", "months"),
+        "loan_term_value": form.get("loan_term_value", ""),
+    }
 
 @app.route("/")
 def home():
@@ -50,8 +82,12 @@ def health():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    payload = _predict_payload(request.form)
-    return render_template("index.html", **payload)
+    try:
+        payload = _predict_payload(request.form)
+        return render_template("index.html", **payload)
+    except Exception as e:
+        # Avoid a 500 for user input issues / missing artifacts.
+        return render_template("index.html", **_safe_error_payload(request.form, str(e))), 400
 
 
 @app.route("/predict_json", methods=["POST"])
