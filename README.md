@@ -50,6 +50,33 @@ Optional:
 
 Tip: You can also use `run.ps1` / `run.bat` if you prefer one-click start.
 
+## Deploy (public URL)
+
+Pushing to GitHub does **not** automatically make a Flask app publicly accessible. To get a public URL, deploy it to a hosting platform.
+
+### Option A: Render (recommended)
+
+This repo includes `render.yaml`, so deployment is mostly click-through.
+
+1. Go to Render → **New +** → **Web Service**
+2. Connect your GitHub repo `CrediLume`
+3. Render will detect `render.yaml` and use:
+   - Build: `pip install -r requirements.txt`
+   - Start: `gunicorn app:app --bind 0.0.0.0:$PORT`
+4. Set environment variables:
+   - `FLASK_DEBUG=0`
+   - `FLASK_RELOADER=0`
+   - `GEMINI_API_KEY` (optional)
+5. Deploy → open the provided Render URL
+
+Important: `loan_model.pkl` and `features.pkl` must be present in the deployed app (they are loaded from the project root at runtime).
+
+### Option B: Railway / Fly.io / Heroku-like platforms
+
+Use the same start command:
+
+- `gunicorn app:app --bind 0.0.0.0:$PORT`
+
 ## API routes
 
 - `GET /` — UI

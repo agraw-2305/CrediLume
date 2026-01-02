@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: credilume
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: FLASK_RELOADER
+        value: "0"
+      - key: GEMINI_API_KEY
+        sync: false
