@@ -28,13 +28,6 @@
     ZAR: [100000, 250000, 500000, 1000000, 2500000]
   };
 
-  // Prepay amounts per currency
-  const prepayAmounts = {
-    USD: 5000, EUR: 5000, GBP: 5000, INR: 50000, JPY: 500000,
-    CNY: 25000, CAD: 5000, AUD: 5000, CHF: 5000, SGD: 5000,
-    AED: 25000, BRL: 25000, MXN: 50000, KRW: 5000000, ZAR: 50000
-  };
-
   // Dynamic formatters
   let fmt = new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 });
   let currency = new Intl.NumberFormat(currentLocale, { style: 'currency', currency: currentCurrency, maximumFractionDigits: 0 });
@@ -505,7 +498,6 @@
   const currencySymbolEl = $('currency_symbol');
   const incomeCurrencySymbolEl = $('income_currency_symbol');
   const amountChipsEl = $('amount_chips');
-  const prepayChipEl = $('prepay_chip');
 
   function updateCurrency() {
     if (!currencySelectEl) return;
@@ -539,12 +531,6 @@
           }
         });
       });
-    }
-    
-    // Update prepay chip
-    if (prepayChipEl) {
-      const prepayAmount = prepayAmounts[currentCurrency] || 5000;
-      prepayChipEl.textContent = 'Prepay ' + formatCompact(prepayAmount);
     }
     
     // Save preference
