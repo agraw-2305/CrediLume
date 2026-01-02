@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CrediLume • Smart Loan Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* Custom Range Slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      background: linear-gradient(to right, #e2e8f0, #e2e8f0);
+      border-radius: 9999px;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #1e40af, #3b82f6);
+      border-radius: 50%;
+      cursor: grab;
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.5);
+    }
+    input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #1e40af, #3b82f6);
+      border-radius: 50%;
+      border: none;
+      cursor: grab;
+      box-shadow: 0 2px 8px rgba(30, 64, 175, 0.4);
+    }
+
+    .brand-gradient { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
+
+    /* Sticky left column on desktop */
+    @media (min-width: 768px) {
+      .sticky-inputs {
+        position: sticky;
+        top: 1.5rem;
+        max-height: calc(100vh - 3rem);
+        overflow-y: auto;
+      }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Smart Advisor Modal */
+    .advisor-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    .advisor-backdrop.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .advisor-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      width: 90%;
+      max-width: 640px;
+      max-height: 85vh;
+      background: white;
+      border-radius: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      z-index: 51;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+      overflow: hidden;
+    }
+    .advisor-modal.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .advisor-content {
+      max-height: calc(85vh - 80px);
+      overflow-y: auto;
+    }
+    .scheme-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .scheme-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    /* Floating button pulse */
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    .advisor-btn-pulse::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: inherit;
+      animation: pulse-ring 2s ease-out infinite;
+      z-index: -1;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+
+  <!-- TOP NAV -->
+  <div class="border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-16 items-center justify-between">
+        <div class="flex items-center gap-6">
+          <a href="/" class="flex items-center gap-2.5 group" aria-label="CrediLume home">
+            <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 shadow-md shadow-blue-900/20 group-hover:shadow-lg group-hover:shadow-blue-900/30 transition-shadow">
+              <svg viewBox="0 0 64 64" class="h-5 w-5 text-white" fill="currentColor" aria-hidden="true">
+                <path d="M32 8c13.255 0 24 10.745 24 24S45.255 56 32 56 8 45.255 8 32 18.745 8 32 8zm0 4c-11.046 0-20 8.954-20 20s8.954 20 20 20 20-8.954 20-20S43.046 12 32 12z"/>
+                <path d="M32 18c7.732 0 14 6.268 14 14s-6.268 14-14 14-14-6.268-14-14 6.268-14 14-14zm0 6a8 8 0 100 16 8 8 0 000-16z"/>
+                <circle cx="32" cy="32" r="4"/>
+              </svg>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-lg font-bold tracking-tight text-slate-900">Credi<span class="text-blue-700">Lume</span></span>
+              <span class="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">AI</span>
+            </div>
+          </a>
+          <nav class="hidden items-center gap-1 md:flex">
+            <a class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-900 bg-slate-100 hover:bg-slate-200 transition" href="#">
+              <span class="flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                Loan Calculator
+              </span>
+            </a>
+          </nav>
+        </div>
+        <!-- Right side - Powered by badge -->
+        <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500">
+          <span>Powered by</span>
+          <span class="font-semibold text-slate-700 flex items-center gap-1">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#4285F4"/>
+              <path d="M2 17L12 22L22 17" stroke="#34A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="#FBBC05" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Gemini AI
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE HEADER (Above the Fold) -->
+  <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <!-- HERO HEADER -->
+    <div class="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6 sm:p-8 shadow-lg border border-slate-700">
+      <!-- Decorative Elements -->
+      <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div class="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-600/20 to-slate-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+      
+      <div class="relative z-10">
+        <div class="flex-1">
+          <!-- Brand Name -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30">
+              <svg viewBox="0 0 64 64" class="h-7 w-7 text-white" fill="currentColor">
+                <circle cx="32" cy="32" r="28" fill="url(#logoGrad)" opacity="0.2"/>
+                <path d="M32 8c13.255 0 24 10.745 24 24S45.255 56 32 56 8 45.255 8 32 18.745 8 32 8zm0 4c-11.046 0-20 8.954-20 20s8.954 20 20 20 20-8.954 20-20S43.046 12 32 12z" fill="currentColor"/>
+                <path d="M32 18c7.732 0 14 6.268 14 14s-6.268 14-14 14-14-6.268-14-14 6.268-14 14-14zm0 6a8 8 0 100 16 8 8 0 000-16z" fill="currentColor"/>
+                <circle cx="32" cy="32" r="4" fill="currentColor"/>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Credi<span class="text-emerald-400">Lume</span>
+              </h1>
+              <p class="text-xs text-slate-400 font-medium tracking-wide uppercase">Smart Loan Intelligence</p>
+            </div>
+          </div>
+          
+          <!-- Tagline -->
+          <p class="text-base sm:text-lg text-slate-300 font-medium leading-relaxed max-w-xl">
+            Your AI-powered loan companion that <span class="text-emerald-400 font-semibold">illuminates</span> the path to smarter borrowing decisions.
+          </p>
+          
+          <!-- Feature Pills -->
+          <div class="mt-4 flex flex-wrap gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur text-xs font-medium text-white border border-white/20">
+              <svg class="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+              EMI Calculator
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur text-xs font-medium text-white border border-white/20">
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+              </svg>
+              AI Advisor
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur text-xs font-medium text-white border border-white/20">
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+              </svg>
+              Eligibility Check
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur text-xs font-medium text-white border border-white/20">
+              <svg class="w-3.5 h-3.5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              38+ Currencies
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TWO-COLUMN LAYOUT -->
+    <div class="grid gap-6 md:gap-8 md:grid-cols-12">
+
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- LEFT COLUMN: INPUTS ONLY (Sticky) -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <section class="md:col-span-5 lg:col-span-4">
+        <div class="sticky-inputs rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          
+          <form id="loan-form" action="/predict" method="post" class="space-y-5">
+
+            <!-- LOAN SETUP HEADER -->
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">Loan setup</h2>
+              <p class="mt-1 text-xs text-slate-500">Configure your loan parameters</p>
+            </div>
+
+            <!-- CURRENCY SELECTOR -->
+            <div>
+              <label class="block text-xs font-medium text-slate-700" for="currency_select">Currency</label>
+              <select
+                id="currency_select"
+                class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold shadow-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="USD" data-symbol="$" data-locale="en-US">🇺🇸 USD - US Dollar ($)</option>
+                <option value="EUR" data-symbol="€" data-locale="de-DE">🇪🇺 EUR - Euro (€)</option>
+                <option value="GBP" data-symbol="£" data-locale="en-GB">🇬🇧 GBP - British Pound (£)</option>
+                <option value="INR" data-symbol="₹" data-locale="en-IN">🇮🇳 INR - Indian Rupee (₹)</option>
+                <option value="JPY" data-symbol="¥" data-locale="ja-JP">🇯🇵 JPY - Japanese Yen (¥)</option>
+                <option value="CNY" data-symbol="¥" data-locale="zh-CN">🇨🇳 CNY - Chinese Yuan (¥)</option>
+                <option value="CAD" data-symbol="$" data-locale="en-CA">🇨🇦 CAD - Canadian Dollar ($)</option>
+                <option value="AUD" data-symbol="$" data-locale="en-AU">🇦🇺 AUD - Australian Dollar ($)</option>
+                <option value="CHF" data-symbol="Fr" data-locale="de-CH">🇨🇭 CHF - Swiss Franc (Fr)</option>
+                <option value="SGD" data-symbol="$" data-locale="en-SG">🇸🇬 SGD - Singapore Dollar ($)</option>
+                <option value="AED" data-symbol="د.إ" data-locale="ar-AE">🇦🇪 AED - UAE Dirham (د.إ)</option>
+                <option value="BRL" data-symbol="R$" data-locale="pt-BR">🇧🇷 BRL - Brazilian Real (R$)</option>
+                <option value="MXN" data-symbol="$" data-locale="es-MX">🇲🇽 MXN - Mexican Peso ($)</option>
+                <option value="KRW" data-symbol="₩" data-locale="ko-KR">🇰🇷 KRW - South Korean Won (₩)</option>
+                <option value="ZAR" data-symbol="R" data-locale="en-ZA">🇿🇦 ZAR - South African Rand (R)</option>
+                <option value="HKD" data-symbol="HK$" data-locale="zh-HK">🇭🇰 HKD - Hong Kong Dollar (HK$)</option>
+                <option value="NZD" data-symbol="$" data-locale="en-NZ">🇳🇿 NZD - New Zealand Dollar ($)</option>
+                <option value="SEK" data-symbol="kr" data-locale="sv-SE">🇸🇪 SEK - Swedish Krona (kr)</option>
+                <option value="NOK" data-symbol="kr" data-locale="nb-NO">🇳🇴 NOK - Norwegian Krone (kr)</option>
+                <option value="DKK" data-symbol="kr" data-locale="da-DK">🇩🇰 DKK - Danish Krone (kr)</option>
+                <option value="PLN" data-symbol="zł" data-locale="pl-PL">🇵🇱 PLN - Polish Zloty (zł)</option>
+                <option value="THB" data-symbol="฿" data-locale="th-TH">🇹🇭 THB - Thai Baht (฿)</option>
+                <option value="IDR" data-symbol="Rp" data-locale="id-ID">🇮🇩 IDR - Indonesian Rupiah (Rp)</option>
+                <option value="MYR" data-symbol="RM" data-locale="ms-MY">🇲🇾 MYR - Malaysian Ringgit (RM)</option>
+                <option value="PHP" data-symbol="₱" data-locale="en-PH">🇵🇭 PHP - Philippine Peso (₱)</option>
+                <option value="VND" data-symbol="₫" data-locale="vi-VN">🇻🇳 VND - Vietnamese Dong (₫)</option>
+                <option value="TRY" data-symbol="₺" data-locale="tr-TR">🇹🇷 TRY - Turkish Lira (₺)</option>
+                <option value="RUB" data-symbol="₽" data-locale="ru-RU">🇷🇺 RUB - Russian Ruble (₽)</option>
+                <option value="SAR" data-symbol="﷼" data-locale="ar-SA">🇸🇦 SAR - Saudi Riyal (﷼)</option>
+                <option value="ILS" data-symbol="₪" data-locale="he-IL">🇮🇱 ILS - Israeli Shekel (₪)</option>
+                <option value="EGP" data-symbol="£" data-locale="ar-EG">🇪🇬 EGP - Egyptian Pound (£)</option>
+                <option value="NGN" data-symbol="₦" data-locale="en-NG">🇳🇬 NGN - Nigerian Naira (₦)</option>
+                <option value="PKR" data-symbol="₨" data-locale="en-PK">🇵🇰 PKR - Pakistani Rupee (₨)</option>
+                <option value="BDT" data-symbol="৳" data-locale="bn-BD">🇧🇩 BDT - Bangladeshi Taka (৳)</option>
+                <option value="COP" data-symbol="$" data-locale="es-CO">🇨🇴 COP - Colombian Peso ($)</option>
+                <option value="ARS" data-symbol="$" data-locale="es-AR">🇦🇷 ARS - Argentine Peso ($)</option>
+                <option value="CLP" data-symbol="$" data-locale="es-CL">🇨🇱 CLP - Chilean Peso ($)</option>
+                <option value="PEN" data-symbol="S/" data-locale="es-PE">🇵🇪 PEN - Peruvian Sol (S/)</option>
+              </select>
+            </div>
+
+            <!-- 1. LOAN AMOUNT -->
+            <div>
+              <label class="block text-xs font-medium text-slate-700" for="loan_amount">Loan amount</label>
+              <div class="mt-1 relative">
+                <span id="currency_symbol" class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-500">$</span>
+                <input
+                  id="loan_amount"
+                  type="number"
+                  name="loan_amount"
+                  placeholder="300000"
+                  inputmode="numeric"
+                  min="0"
+                  step="1"
+                  value="{{ loan_amount if loan_amount is defined else '' }}"
+                  class="w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 py-3 text-lg font-semibold shadow-sm outline-none placeholder:font-medium placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  required
+                >
+              </div>
+              <!-- AMOUNT CHIPS -->
+              <div id="amount_chips" class="mt-2 flex flex-wrap gap-2">
+                <button type="button" data-amount="10000" class="chip-btn rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50">$10K</button>
+                <button type="button" data-amount="25000" class="chip-btn rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50">$25K</button>
+                <button type="button" data-amount="50000" class="chip-btn rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50">$50K</button>
+                <button type="button" data-amount="100000" class="chip-btn rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50">$100K</button>
+                <button type="button" data-amount="250000" class="chip-btn rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-50">$250K</button>
+              </div>
+            </div>
+
+            <!-- 2. TENURE SLIDER + INPUT -->
+            <div>
+              <label class="block text-xs font-medium text-slate-700" for="tenure_months">Tenure</label>
+              <div class="mt-2">
+                <input
+                  id="tenure_months"
+                  type="range"
+                  min="12"
+                  max="360"
+                  step="1"
+                  value="{{ loan_term if loan_term is defined and loan_term else '120' }}"
+                  class="w-full"
+                  aria-label="Tenure in months"
+                >
+                <div class="mt-1 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>1 year</span>
+                  <span class="font-medium text-slate-700" id="tenureLabel">10 years / 120 months</span>
+                  <span>30 years</span>
+                </div>
+              </div>
+              <div class="mt-2 flex gap-2">
+                <input
+                  id="tenure_typed"
+                  type="number"
+                  inputmode="decimal"
+                  min="1"
+                  step="1"
+                  value="10"
+                  class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold shadow-sm outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
+                  aria-label="Tenure value"
+                >
+                <select
+                  id="tenure_unit_select"
+                  class="w-28 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold shadow-sm outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
+                  aria-label="Tenure unit"
+                >
+                  <option value="years" selected>Years</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+              <input type="hidden" name="term_unit" id="term_unit" value="months">
+              <input type="hidden" name="loan_term_value" id="loan_term_value" value="{{ loan_term if loan_term is defined and loan_term else '120' }}" required>
+              <input type="hidden" name="loan_term" id="loan_term" value="{{ loan_term if loan_term is defined else '' }}">
+            </div>
+
+            <!-- 3. INTEREST RATE SLIDER -->
+            <div>
+              <label class="block text-xs font-medium text-slate-700" for="interest_rate">Interest rate (APR)</label>
+              <div class="mt-1 flex items-center gap-3">
+                <input
+                  id="interest_rate"
+                  type="range"
+                  min="1"
+                  max="30"
+                  step="0.1"
+                  value="10"
+                  class="w-full"
+                  aria-label="Interest rate"
+                >
+                <span id="interest_rate_label" class="shrink-0 w-14 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-center text-sm font-semibold">10%</span>
+              </div>
+              <div class="mt-1 grid grid-cols-3 text-[10px] text-slate-500">
+                <div class="text-left">Low <span class="font-medium text-slate-700">9%</span></div>
+                <div class="text-center">Avg <span class="font-medium text-slate-700">12%</span></div>
+                <div class="text-right">High <span class="font-medium text-slate-700">18%</span></div>
+              </div>
+              <input type="hidden" name="interest_rate" id="interest_rate_post" value="{{ interest_rate if interest_rate is defined else '10' }}">
+            </div>
+
+            <!-- 4. WHAT-IF SCENARIOS -->
+            <div class="rounded-lg bg-slate-50 p-3">
+              <p class="text-[11px] font-semibold text-slate-700">What-if scenarios</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <button type="button" data-chip="reduce_rate" class="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-100">−2% rate</button>
+                <button type="button" data-chip="increase_tenure" class="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-100">+1 year</button>
+                <button type="button" data-chip="prepay_50k" id="prepay_chip" class="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-100">Prepay $5K</button>
+              </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 5. APPLICANT PROFILE -->
+            <div>
+              <p class="text-xs font-semibold text-slate-700 mb-3">Applicant profile</p>
+              
+              <div class="space-y-3">
+                <!-- Age and Gender Row -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600" for="applicant_age">Age</label>
+                    <input
+                      id="applicant_age"
+                      type="number"
+                      name="applicant_age"
+                      placeholder="e.g., 30"
+                      inputmode="numeric"
+                      min="18"
+                      max="100"
+                      value="{{ applicant_age if applicant_age is defined else '' }}"
+                      class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      required
+                    >
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-slate-600" for="applicant_gender">Gender</label>
+                    <select
+                      id="applicant_gender"
+                      name="applicant_gender"
+                      class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      required
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Age Eligibility Hint -->
+                <div id="ageEligibilityHint" class="hidden rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                  <p class="text-[11px] font-medium text-amber-800" id="ageHintText"></p>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600" for="loan_type">Loan type</label>
+                  <select
+                    id="loan_type"
+                    name="loan_type"
+                    class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    required
+                  >
+                    {% set lt = (loan_type if loan_type is defined else 'personal') %}
+                    <option value="personal" {{ 'selected' if lt == 'personal' else '' }}>Personal</option>
+                    <option value="home" {{ 'selected' if lt == 'home' else '' }}>Home</option>
+                    <option value="education" {{ 'selected' if lt == 'education' else '' }}>Education</option>
+                    <option value="business" {{ 'selected' if lt == 'business' else '' }}>Business</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600" for="applicant_profile">Profile</label>
+                  <select
+                    id="applicant_profile"
+                    name="applicant_profile"
+                    class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    required
+                  >
+                    {% set ap = (applicant_profile if applicant_profile is defined else 'salaried') %}
+                    <option value="salaried" {{ 'selected' if ap == 'salaried' else '' }}>Salaried</option>
+                    <option value="self_employed" {{ 'selected' if ap == 'self_employed' else '' }}>Self-employed</option>
+                    <option value="business_owner" {{ 'selected' if ap == 'business_owner' else '' }}>Business owner</option>
+                    <option value="student" {{ 'selected' if ap == 'student' else '' }}>Student</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600" for="income_annum">Annual income</label>
+                  <div class="mt-1 relative">
+                    <span id="income_currency_symbol" class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">$</span>
+                    <input
+                      id="income_annum"
+                      type="number"
+                      name="income_annum"
+                      placeholder="e.g., 900000"
+                      inputmode="numeric"
+                      min="0"
+                      value="{{ income_annum if income_annum is defined else '' }}"
+                      class="w-full rounded-lg border border-slate-200 bg-white pl-7 pr-3 py-2.5 text-sm shadow-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      required
+                    >
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600" for="cibil_score">Credit score</label>
+                  <input
+                    id="cibil_score"
+                    type="number"
+                    name="cibil_score"
+                    placeholder="e.g., 720"
+                    inputmode="numeric"
+                    min="300"
+                    max="900"
+                    value="{{ cibil_score if cibil_score is defined else '' }}"
+                    class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    required
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <button
+              type="submit"
+              id="submitBtn"
+              class="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 focus:outline-none focus:ring-4 focus:ring-slate-200 brand-gradient"
+            >
+              Check eligibility
+            </button>
+
+            <!-- TRUST BADGES -->
+            <div class="flex flex-wrap justify-center gap-2 text-[10px] text-slate-500">
+              <span class="rounded-full bg-slate-50 px-2 py-1 ring-1 ring-inset ring-slate-200">No data stored</span>
+              <span class="rounded-full bg-slate-50 px-2 py-1 ring-1 ring-inset ring-slate-200">Bank-standard formula</span>
+              <span class="rounded-full bg-slate-50 px-2 py-1 ring-1 ring-inset ring-slate-200">No credit check</span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- RIGHT COLUMN: RESULTS → SAFETY → EXPLANATION → DEPTH -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <section class="md:col-span-7 lg:col-span-8 space-y-6">
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 1: PRIMARY RESULT (EMI + Totals) - TOP PRIORITY -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-col lg:flex-row gap-5">
+            
+            <!-- EMI HERO (Left) -->
+            <div class="flex-1 rounded-2xl p-5 text-white brand-gradient">
+              <h2 class="text-sm font-semibold text-white/90">Monthly EMI</h2>
+              <p class="mt-1 text-xs text-white/70">Live updates as you adjust inputs</p>
+              <p class="mt-4 text-4xl sm:text-5xl font-bold tracking-tight" id="monthly_payment">—</p>
+              <p class="mt-2 text-sm text-white/80" id="emiSubText">Enter loan details to calculate</p>
+            </div>
+
+            <!-- Totals Card (Right) -->
+            <div class="lg:w-72 rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-xs text-slate-500">Principal</p>
+                  <p class="mt-1 text-lg font-semibold text-slate-900" id="principal_total">—</p>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-500">Total interest</p>
+                  <p class="mt-1 text-lg font-semibold text-amber-600" id="interest_total">—</p>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-500">Total payable</p>
+                  <p class="mt-1 text-lg font-semibold text-slate-900" id="total_cost">—</p>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-500">Interest share</p>
+                  <p class="mt-1 text-lg font-semibold text-slate-900" id="interest_pct">—</p>
+                </div>
+              </div>
+              <p class="mt-3 text-[11px] text-slate-500" id="interestSummaryLine">You'll see totals once inputs are valid.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 2: IMMEDIATE INTERPRETATION (Is this EMI safe?) -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="grid gap-5 md:grid-cols-2">
+            
+            <!-- Affordability Meter -->
+            <div class="rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-semibold text-slate-900">Affordability meter</p>
+                <p class="text-xs font-semibold text-slate-700" id="affordMeterLabel">Add income to score</p>
+              </div>
+              <div class="mt-3 h-3 w-full rounded-full bg-slate-200">
+                <div id="affordMeterFill" class="h-3 w-0 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500"></div>
+              </div>
+              <p class="mt-2 text-xs text-slate-600" id="affordabilityText">Add income to see EMI as % of monthly income.</p>
+            </div>
+
+            <!-- Rate Stress Test -->
+            <div class="rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-semibold text-slate-900">Rate stress test</p>
+                <p class="text-xs font-semibold text-amber-600" id="stressLabel">+2.0%</p>
+              </div>
+              <input id="stress_rate" type="range" min="0" max="3" step="0.1" value="2" class="mt-3 w-full" aria-label="Stress rate">
+              <p class="mt-2 text-xs text-slate-600" id="stressResult">Move slider to see EMI sensitivity.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 3: AI INSIGHT (Trust & Intelligence) -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <p class="text-sm font-semibold text-slate-900">AI insight</p>
+              <p class="mt-1 text-xs text-slate-500">Contextual, explainable guidance based on your inputs</p>
+            </div>
+            <div class="flex flex-wrap gap-1.5 text-[10px] text-slate-500">
+              <span class="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-inset ring-slate-200">No data stored</span>
+              <span class="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-inset ring-slate-200">Bank-standard formula</span>
+              <span class="rounded-full bg-slate-50 px-2 py-0.5 ring-1 ring-inset ring-slate-200">No credit check</span>
+            </div>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-xl bg-emerald-50 p-4 ring-1 ring-inset ring-emerald-200">
+              <p class="text-xs font-semibold text-emerald-900">💰 Savings opportunity</p>
+              <p class="mt-2 text-sm text-emerald-800" id="aiSavingsLine">Enter loan details to estimate savings from tenure/rate changes.</p>
+            </div>
+
+            <div class="rounded-xl bg-blue-50 p-4 ring-1 ring-inset ring-blue-200">
+              <p class="text-xs font-semibold text-blue-900">📊 Affordability check</p>
+              <p class="mt-2 text-sm text-blue-800" id="aiAffordLine">Add income to see whether this EMI looks comfortable.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 4: FRIENDLY NEXT STEPS -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-sm font-semibold text-slate-900 mb-3">Friendly next steps</p>
+          <ul class="space-y-2 text-sm text-slate-700" id="aiNextSteps">
+            <li class="flex items-start gap-2"><span class="text-sky-500 mt-0.5">•</span><span>Pick a loan amount chip to start quickly.</span></li>
+            <li class="flex items-start gap-2"><span class="text-sky-500 mt-0.5">•</span><span>Use tenure slider to see how interest changes.</span></li>
+            <li class="flex items-start gap-2"><span class="text-sky-500 mt-0.5">•</span><span>Try stress test to see rate sensitivity.</span></li>
+          </ul>
+          
+          <details class="mt-4">
+            <summary class="cursor-pointer text-xs font-medium text-slate-600 hover:text-slate-900">How is EMI calculated?</summary>
+            <div class="mt-3 rounded-lg bg-slate-50 p-3">
+              <p class="text-[11px] text-slate-600 mb-2">We use the standard amortized-loan EMI formula used by banks worldwide:</p>
+              <div class="flex items-center justify-center py-2">
+                <span class="text-sm font-semibold text-slate-800">EMI = P × </span>
+                <span class="inline-flex flex-col items-center mx-1">
+                  <span class="text-xs text-slate-800 border-b border-slate-400 px-1">r(1+r)<sup>n</sup></span>
+                  <span class="text-xs text-slate-800 px-1">(1+r)<sup>n</sup> − 1</span>
+                </span>
+              </div>
+              <div class="mt-2 text-[10px] text-slate-500 space-y-0.5">
+                <p><strong>P</strong> = Principal • <strong>r</strong> = Monthly rate • <strong>n</strong> = Tenure (months)</p>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 5: DEEP FINANCIAL BREAKDOWN (Lowest Priority) -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-sm font-semibold text-slate-900 mb-4">Deep financial breakdown</p>
+          
+          <div class="grid gap-5 md:grid-cols-12">
+            <!-- Donut Chart -->
+            <div class="md:col-span-4">
+              <div class="rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
+                <p class="text-xs font-semibold text-slate-700 mb-3">Principal vs Interest</p>
+                <canvas id="breakdownChart" height="160" aria-label="Breakdown chart" role="img"></canvas>
+                <p class="mt-2 text-[10px] text-slate-500 text-center" id="chartHint">Enter details to see split</p>
+              </div>
+            </div>
+
+            <!-- Amortization Table -->
+            <div class="md:col-span-8">
+              <div class="rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
+                <div class="flex items-center justify-between mb-3">
+                  <p class="text-xs font-semibold text-slate-700">Smart amortization preview</p>
+                  <button type="button" id="toggleAmortBtn" onclick="document.getElementById('amortTableWrapper').classList.toggle('hidden'); this.textContent = this.textContent === 'Show' ? 'Hide' : 'Show';" class="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-100 transition">Show</button>
+                </div>
+                <div id="amortTableWrapper" class="hidden">
+                  <div class="overflow-auto max-h-64 rounded-lg border border-slate-200">
+                    <table class="min-w-full text-left text-xs">
+                      <thead class="text-slate-600 sticky top-0 bg-slate-100">
+                        <tr>
+                          <th class="px-2 py-2 font-medium">Month</th>
+                          <th class="px-2 py-2 font-medium">EMI</th>
+                          <th class="px-2 py-2 font-medium text-emerald-700">Principal</th>
+                          <th class="px-2 py-2 font-medium text-amber-700">Interest</th>
+                          <th class="px-2 py-2 font-medium">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody id="amortKeyBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <p class="mt-2 text-[10px] text-slate-500" id="amortKeyHint">First 24 months breakdown. Enter valid loan details to populate.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ELIGIBILITY PANEL (Client-rendered) -->
+        <section id="eligibilityClient" class="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-900">Eligibility decision</h2>
+              <p class="mt-1 text-sm font-medium text-slate-900" id="eligText">Checking…</p>
+              <p class="mt-1 text-[11px] text-slate-500" id="eligSub">Explainable output. No credit check.</p>
+            </div>
+            <span id="eligBadge" class="inline-flex w-fit items-center rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">AI + rules</span>
+          </div>
+
+          <div class="mt-4">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-semibold text-slate-900">Financial health score</p>
+              <p class="text-xs font-semibold text-slate-900" id="eligScore">—/100</p>
+            </div>
+            <div class="mt-2 h-3 w-full rounded-full bg-slate-100">
+              <div id="eligScoreBar" class="h-3 w-0 rounded-full bg-emerald-500 transition-all duration-500"></div>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-5 sm:grid-cols-2">
+            <div>
+              <p class="text-xs font-semibold text-slate-900">Why this decision?</p>
+              <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700" id="eligReasons"></ul>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-900">How to improve</p>
+              <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700" id="eligSuggestions"></ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ELIGIBILITY PANEL (Server-rendered) -->
+        {% if prediction_text %}
+        {% set decision_classes = 'border-green-200 bg-green-50 text-green-900' if 'Approved' in prediction_text else 'border-red-200 bg-red-50 text-red-900' %}
+        {% set ring_classes = 'ring-green-200' if 'Approved' in prediction_text else 'ring-red-200' %}
+        {% set score_color = 'bg-green-600' if health_score >= 75 else ('bg-amber-500' if health_score >= 50 else 'bg-red-500') %}
+
+        <section class="rounded-2xl border p-5 shadow-sm {{ decision_classes }}">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-sm font-semibold">Eligibility decision</h2>
+              <p class="mt-1 text-sm font-medium">{{ prediction_text }}</p>
+            </div>
+            <span class="inline-flex w-fit items-center rounded-full bg-white/70 px-3 py-1 text-xs font-medium ring-1 ring-inset {{ ring_classes }}">
+              Explainable output
+            </span>
+          </div>
+
+          <div class="mt-4">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-semibold">Financial health score</p>
+              <p class="text-xs font-semibold">{{ health_score }}/100</p>
+            </div>
+            <div class="mt-2 h-3 w-full rounded-full bg-white/60 ring-1 ring-inset ring-slate-200">
+              <div class="h-3 rounded-full {{ score_color }}" style="width: {{ health_score }}%"></div>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-5 sm:grid-cols-2">
+            <div>
+              <p class="text-xs font-semibold">Why this decision?</p>
+              {% if reasons %}
+              <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+                {% for r in reasons %}
+                <li>{{ r }}</li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <p class="mt-2 text-sm opacity-80">No rule-based risk flags triggered.</p>
+              {% endif %}
+            </div>
+
+            <div>
+              <p class="text-xs font-semibold">How to improve eligibility</p>
+              {% if suggestions %}
+              <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+                {% for s in suggestions %}
+                <li>{{ s }}</li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <p class="mt-2 text-sm opacity-80">Looks good. Keep utilization low and pay on time.</p>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+        {% endif %}
+
+      </section>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <!-- GEMINI CHATBOT - Floating Button -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════ -->
+  <button
+    id="advisorBtn"
+    onclick="openChatbot()"
+    class="advisor-btn-pulse fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:shadow-xl hover:shadow-emerald-600/40 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-emerald-300"
+    aria-label="Open AI Financial Advisor"
+  >
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+    <span class="hidden sm:inline">EMI Expert</span>
+  </button>
+
+  <!-- Chatbot Modal Backdrop -->
+  <div id="advisorBackdrop" class="advisor-backdrop" onclick="closeChatbot()"></div>
+
+  <!-- Chatbot Modal -->
+  <div id="advisorModal" class="advisor-modal" role="dialog" aria-modal="true" aria-labelledby="advisorTitle" style="display: flex; flex-direction: column;">
+    <!-- Header -->
+    <div class="sticky top-0 z-10 bg-gradient-to-r from-slate-800 to-slate-900 px-5 py-4 text-white">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+            </svg>
+          </div>
+          <div>
+            <h2 id="advisorTitle" class="text-lg font-bold">EMI & Loan Expert</h2>
+            <p class="text-xs text-white/80 flex items-center gap-1">
+              <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Powered by Gemini AI
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="clearChat()" class="rounded-lg p-2 hover:bg-white/20 transition" aria-label="Clear chat" title="Clear chat">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+          <button onclick="closeChatbot()" class="rounded-lg p-2 hover:bg-white/20 transition" aria-label="Close">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Messages Area -->
+    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4" style="min-height: 300px; max-height: 400px;">
+      <!-- Welcome Message -->
+      <div class="flex gap-3">
+        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+          <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+        </div>
+        <div class="flex-1">
+          <div class="bg-slate-100 rounded-2xl rounded-tl-md px-4 py-3 text-sm text-slate-700">
+            <p class="font-medium text-slate-900">Hi! I'm your EMI & Loan Expert 🎯</p>
+            <p class="mt-2">I specialize in:</p>
+            <ul class="mt-2 space-y-1.5 text-xs">
+              <li class="flex items-center gap-2">📊 <strong>EMI Calculations</strong> - How EMI works, formulas explained</li>
+              <li class="flex items-center gap-2">💰 <strong>Interest Savings</strong> - Strategies to pay less interest</li>
+              <li class="flex items-center gap-2">⏱️ <strong>Tenure Planning</strong> - Short vs long term trade-offs</li>
+              <li class="flex items-center gap-2">🎯 <strong>Prepayment Tips</strong> - When & how to prepay smartly</li>
+              <li class="flex items-center gap-2">📈 <strong>Affordability</strong> - How much loan can you afford?</li>
+              <li class="flex items-center gap-2">🏦 <strong>Loan Comparison</strong> - Fixed vs floating, bank selection</li>
+            </ul>
+            <p class="mt-3 text-xs text-slate-500 italic">💡 Tip: I can see your calculator inputs and give personalized advice!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Suggestions - Two Rows -->
+    <div id="quickSuggestions" class="px-4 pb-2 space-y-2">
+      <div class="flex flex-wrap gap-2">
+        <button onclick="sendQuickMessage('Explain how EMI is calculated with an example')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full transition border border-blue-200">
+          📊 How is EMI calculated?
+        </button>
+        <button onclick="sendQuickMessage('How can I reduce my total interest payment?')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full transition border border-emerald-200">
+          💰 Reduce my interest
+        </button>
+        <button onclick="sendQuickMessage('Should I choose a shorter or longer loan tenure?')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full transition border border-amber-200">
+          ⏱️ Short vs long tenure?
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="sendQuickMessage('When should I prepay my loan? Is it worth it?')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 px-3 py-1.5 rounded-full transition border border-teal-200">
+          🎯 Prepayment strategy
+        </button>
+        <button onclick="sendQuickMessage('How much loan can I afford based on my income?')" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full transition border border-slate-300">
+          💵 What can I afford?
+        </button>
+        <button onclick="sendQuickMessage('Fixed vs floating interest rate - which is better?')" class="text-xs bg-sky-50 hover:bg-sky-100 text-sky-700 px-3 py-1.5 rounded-full transition border border-sky-200">
+          📉 Fixed vs floating?
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="sendQuickMessage('How does credit score affect my loan interest rate?')" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full transition border border-slate-300">
+          📈 Credit score impact
+        </button>
+        <button onclick="sendQuickMessage('Am I eligible for this loan based on my age?')" class="text-xs bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-1.5 rounded-full transition border border-orange-200">
+          👤 Check age eligibility
+        </button>
+        <button onclick="sendQuickMessage('Analyze my current loan - is it a good deal?')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full transition border border-blue-200">
+          🔍 Analyze my loan
+        </button>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="border-t border-slate-200 bg-white px-4 py-3">
+      <form onsubmit="sendMessage(event)" class="flex gap-2">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Ask about EMI, prepayment, tenure, interest savings..."
+          class="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+          autocomplete="off"
+        />
+        <button
+          type="submit"
+          id="sendBtn"
+          class="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-2.5 text-white hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+          </svg>
+        </button>
+      </form>
+      <p class="mt-2 text-[10px] text-slate-400 text-center">AI responses are for informational purposes. Always consult a financial professional.</p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='calculator.js') }}"></script>
+  
+  <!-- Chatbot JavaScript -->
+  <script>
+    // Chat state
+    let chatHistory = [];
+    let isTyping = false;
+
+    function openChatbot() {
+      document.getElementById('advisorBackdrop').classList.add('active');
+      document.getElementById('advisorModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('chatInput').focus();
+    }
+
+    function closeChatbot() {
+      document.getElementById('advisorBackdrop').classList.remove('active');
+      document.getElementById('advisorModal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeChatbot();
+    });
+
+    function clearChat() {
+      chatHistory = [];
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = `
+        <div class="flex gap-3">
+          <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+            <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="bg-slate-100 rounded-2xl rounded-tl-md px-4 py-3 text-sm text-slate-700">
+              <p class="font-medium text-slate-900">Chat cleared! How can I help you? 👋</p>
+              <p class="mt-2 text-xs text-slate-500">Ask me anything about loans and finances!</p>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('quickSuggestions').classList.remove('hidden');
+    }
+
+    function sendQuickMessage(message) {
+      document.getElementById('chatInput').value = message;
+      sendMessage(new Event('submit'));
+    }
+
+    function sendMessage(e) {
+      e.preventDefault();
+      
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      
+      if (!message || isTyping) return;
+      
+      // Hide quick suggestions after first message
+      document.getElementById('quickSuggestions').classList.add('hidden');
+      
+      // Add user message to chat
+      addMessage(message, 'user');
+      input.value = '';
+      
+      // Add to history
+      chatHistory.push({ role: 'user', content: message });
+      
+      // Show typing indicator
+      showTyping();
+      
+      // Get current loan context
+      const loanAmount = parseFloat(document.getElementById('loan_amount')?.value) || 0;
+      const tenure = parseInt(document.getElementById('tenure_months')?.value) || 120;
+      const rate = parseFloat(document.getElementById('interest_rate')?.value) || 10;
+      const income = parseFloat(document.getElementById('income_annum')?.value) || 0;
+      const creditScore = parseFloat(document.getElementById('cibil_score')?.value) || 700;
+      const currency = document.getElementById('currency_select')?.value || 'USD';
+      const loanType = document.getElementById('loan_type')?.value || 'personal';
+      const age = parseInt(document.getElementById('applicant_age')?.value) || 0;
+      const gender = document.getElementById('applicant_gender')?.value || 'not specified';
+      
+      // Send to backend
+      fetch('/chat_advisor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: message,
+          history: chatHistory.slice(-10), // Last 10 messages for context
+          context: {
+            loan_amount: loanAmount,
+            tenure_months: tenure,
+            interest_rate: rate,
+            income: income,
+            credit_score: creditScore,
+            currency: currency,
+            loan_type: loanType,
+            age: age,
+            gender: gender
+          }
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        hideTyping();
+        
+        if (data.ok) {
+          addMessage(data.response, 'assistant');
+          chatHistory.push({ role: 'assistant', content: data.response });
+        } else {
+          addMessage('Sorry, I encountered an error. Please try again.', 'assistant', true);
+        }
+      })
+      .catch(err => {
+        hideTyping();
+        addMessage('Network error. Please check your connection and try again.', 'assistant', true);
+      });
+    }
+
+    function addMessage(content, role, isError = false) {
+      const container = document.getElementById('chatMessages');
+      
+      if (role === 'user') {
+        container.innerHTML += `
+          <div class="flex gap-3 justify-end">
+            <div class="flex-1 max-w-[80%]">
+              <div class="bg-gradient-to-r from-blue-700 to-blue-800 rounded-2xl rounded-tr-md px-4 py-3 text-sm text-white ml-auto">
+                ${escapeHtml(content)}
+              </div>
+            </div>
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center">
+              <svg class="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          </div>
+        `;
+      } else {
+        const bgClass = isError ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700';
+        container.innerHTML += `
+          <div class="flex gap-3">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+              <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            </div>
+            <div class="flex-1 max-w-[85%]">
+              <div class="${bgClass} rounded-2xl rounded-tl-md px-4 py-3 text-sm">
+                ${formatResponse(content)}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function showTyping() {
+      isTyping = true;
+      document.getElementById('sendBtn').disabled = true;
+      
+      const container = document.getElementById('chatMessages');
+      container.innerHTML += `
+        <div id="typingIndicator" class="flex gap-3">
+          <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+            <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <div class="bg-slate-100 rounded-2xl rounded-tl-md px-4 py-3 text-sm text-slate-500">
+              <div class="flex items-center gap-1">
+                <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function hideTyping() {
+      isTyping = false;
+      document.getElementById('sendBtn').disabled = false;
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatResponse(text) {
+      // Convert markdown-like formatting to HTML
+      let html = escapeHtml(text);
+      
+      // Bold text
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Bullet points
+      html = html.replace(/^[•\-]\s*(.+)$/gm, '<li class="ml-4">$1</li>');
+      html = html.replace(/(<li.*<\/li>\n?)+/g, '<ul class="list-disc space-y-1 my-2">$&</ul>');
+      
+      // Numbered lists
+      html = html.replace(/^\d+\.\s*(.+)$/gm, '<li class="ml-4">$1</li>');
+      
+      // Line breaks
+      html = html.replace(/\n/g, '<br>');
+      
+      return html;
+    }
+
+    // Legacy function aliases for compatibility
+    function openSmartAdvisor() { openChatbot(); }
+    function closeSmartAdvisor() { closeChatbot(); }
+  </script>
+
+  <!-- FOOTER WITH DISCLAIMER -->
+  <footer class="mt-12 border-t border-slate-200 bg-slate-50">
+    <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <!-- Compact Disclaimer -->
+      <div class="flex items-start gap-2 text-xs text-slate-500 bg-white rounded-lg p-3 border border-slate-200">
+        <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+        </svg>
+        <p>
+          <strong class="text-slate-600">Disclaimer:</strong> All calculations and AI advice are <strong>estimates only</strong>, not financial advice. Actual loan terms vary by lender. Consult a financial professional before borrowing. CrediLume is not liable for decisions based on this tool.
+        </p>
+      </div>
+      
+      <!-- Copyright -->
+      <div class="mt-4 pt-4 border-t border-slate-100 text-center text-xs text-slate-400">
+        <p>© 2026 CrediLume</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
