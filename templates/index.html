@@ -554,31 +554,31 @@
           <div class="flex flex-col lg:flex-row gap-5">
             
             <!-- EMI HERO (Left) -->
-            <div class="flex-1 rounded-2xl p-5 text-white brand-gradient">
+            <div class="flex-1 min-w-0 rounded-2xl p-5 text-white brand-gradient">
               <h2 class="text-sm font-semibold text-white/90">Monthly EMI</h2>
               <p class="mt-1 text-xs text-white/70">Live updates as you adjust inputs</p>
-              <p class="mt-4 text-4xl sm:text-5xl font-bold tracking-tight" id="monthly_payment">—</p>
+              <p class="mt-4 w-full break-all leading-none text-4xl sm:text-5xl font-bold tracking-tight" id="monthly_payment">—</p>
               <p class="mt-2 text-sm text-white/80" id="emiSubText">Enter loan details to calculate</p>
             </div>
 
             <!-- Totals Card (Right) -->
-            <div class="lg:w-72 rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
+            <div class="lg:w-72 min-w-0 rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-200">
               <div class="grid grid-cols-2 gap-4">
-                <div>
+                <div class="min-w-0">
                   <p class="text-xs text-slate-500">Principal</p>
-                  <p class="mt-1 text-lg font-semibold text-slate-900" id="principal_total">—</p>
+                  <p class="mt-1 max-w-full break-all leading-tight text-lg font-semibold text-slate-900" id="principal_total">—</p>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <p class="text-xs text-slate-500">Total interest</p>
-                  <p class="mt-1 text-lg font-semibold text-amber-600" id="interest_total">—</p>
+                  <p class="mt-1 max-w-full break-all leading-tight text-lg font-semibold text-amber-600" id="interest_total">—</p>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <p class="text-xs text-slate-500">Total payable</p>
-                  <p class="mt-1 text-lg font-semibold text-slate-900" id="total_cost">—</p>
+                  <p class="mt-1 max-w-full break-all leading-tight text-lg font-semibold text-slate-900" id="total_cost">—</p>
                 </div>
-                <div>
+                <div class="min-w-0">
                   <p class="text-xs text-slate-500">Interest share</p>
-                  <p class="mt-1 text-lg font-semibold text-slate-900" id="interest_pct">—</p>
+                  <p class="mt-1 max-w-full break-all leading-tight text-lg font-semibold text-slate-900" id="interest_pct">—</p>
                 </div>
               </div>
               <p class="mt-3 text-[11px] text-slate-500" id="interestSummaryLine">You'll see totals once inputs are valid.</p>

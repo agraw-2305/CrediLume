@@ -32,9 +32,74 @@
   let fmt = new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 });
   let currency = new Intl.NumberFormat(currentLocale, { style: 'currency', currency: currentCurrency, maximumFractionDigits: 0 });
 
+  // Calculation limits (tune these if you want)
+  // NOTE: JS numbers cannot precisely represent integers > Number.MAX_SAFE_INTEGER
+  const MAX_PRINCIPAL_DEFAULT = Number.MAX_SAFE_INTEGER;
+  const MAX_PRINCIPAL_BY_CURRENCY = {
+    // Example overrides (optional):
+    // INR: 1000000000000000, // 1,000,000 Cr
+  };
+
   function updateFormatters() {
     fmt = new Intl.NumberFormat(currentLocale, { maximumFractionDigits: 0 });
     currency = new Intl.NumberFormat(currentLocale, { style: 'currency', currency: currentCurrency, maximumFractionDigits: 0 });
+  }
+
+  function getMaxPrincipal() {
+    const byCurrency = MAX_PRINCIPAL_BY_CURRENCY[currentCurrency];
+    const max = typeof byCurrency === 'number' ? byCurrency : MAX_PRINCIPAL_DEFAULT;
+    return Math.min(max, Number.MAX_SAFE_INTEGER);
+  }
+
+  function symbolPrefix() {
+    const sym = String(currentSymbol || '').trim();
+    if (!sym) return '';
+    // Add a space for alphabetic symbols like "Rp", "RM", "Fr", "kr".
+    const alphaLike = /^[A-Za-z]{1,4}$/.test(sym) || (/[A-Za-z]/.test(sym) && !/[$€£¥₹₩฿₱]/.test(sym));
+    return alphaLike ? (sym + ' ') : sym;
+  }
+
+  function formatCompactValue(value) {
+    const abs = Math.abs(value);
+    const prefix = symbolPrefix();
+
+    if (currentCurrency === 'JPY' || currentCurrency === 'KRW') {
+      if (abs >= 100000000) return prefix + (value / 100000000).toFixed(abs >= 1000000000 ? 0 : 1) + '億';
+      if (abs >= 10000) return prefix + (value / 10000).toFixed(abs >= 100000 ? 0 : 1) + '万';
+      return currency.format(value);
+    }
+
+    if (currentCurrency === 'INR') {
+      if (abs >= 10000000) return '₹' + (value / 10000000).toFixed(abs >= 100000000 ? 0 : 1) + 'Cr';
+      if (abs >= 100000) return '₹' + (value / 100000).toFixed(abs >= 1000000 ? 0 : 1) + 'L';
+      return currency.format(value);
+    }
+
+    if (abs >= 1e12) return prefix + (value / 1e12).toFixed(abs >= 1e13 ? 0 : 1) + 'T';
+    if (abs >= 1e9) return prefix + (value / 1e9).toFixed(abs >= 1e10 ? 0 : 1) + 'B';
+    if (abs >= 1e6) return prefix + (value / 1e6).toFixed(abs >= 1e7 ? 0 : 1) + 'M';
+    if (abs >= 1e3) return prefix + (value / 1e3).toFixed(abs >= 1e4 ? 0 : 1) + 'K';
+    return currency.format(value);
+  }
+
+  function formatCurrencyAdaptive(value, maxLen = 18) {
+    if (!Number.isFinite(value)) return '—';
+    const full = currency.format(value);
+    if (full.length <= maxLen) return full;
+    return formatCompactValue(value);
+  }
+
+  function fitEmiText(displayText) {
+    if (!monthlyPaymentEl) return;
+    const len = String(displayText || '').length;
+    // Soft scaling: keep it big for normal values, shrink for long strings.
+    let rem = 3.0;
+    if (len > 18) rem = 2.6;
+    if (len > 24) rem = 2.2;
+    if (len > 30) rem = 1.9;
+    if (len > 36) rem = 1.6;
+    monthlyPaymentEl.style.fontSize = rem + 'rem';
+    monthlyPaymentEl.style.lineHeight = '1.05';
   }
 
   function formatCompact(value) {
@@ -48,8 +113,10 @@
       if (value >= 100000) return '₹' + (value / 100000).toFixed(0) + 'L';
       return '₹' + fmt.format(value);
     }
-    if (value >= 1000000) return currentSymbol + (value / 1000000).toFixed(1) + 'M';
-    if (value >= 1000) return currentSymbol + (value / 1000).toFixed(0) + 'K';
+    if (value >= 1000000000000) return symbolPrefix() + (value / 1000000000000).toFixed(1) + 'T';
+    if (value >= 1000000000) return symbolPrefix() + (value / 1000000000).toFixed(1) + 'B';
+    if (value >= 1000000) return symbolPrefix() + (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000) return symbolPrefix() + (value / 1000).toFixed(0) + 'K';
     return currentSymbol + fmt.format(value);
   }
 
@@ -221,10 +288,10 @@
       tr.className = i % 2 === 0 ? 'bg-white' : 'bg-slate-50';
       tr.innerHTML = `
         <td class="px-2 py-1.5 text-slate-600 font-medium">${row.month}</td>
-        <td class="px-2 py-1.5">${currency.format(row.emi)}</td>
-        <td class="px-2 py-1.5 text-emerald-600">${currency.format(row.principal)}</td>
-        <td class="px-2 py-1.5 text-amber-600">${currency.format(row.interest)}</td>
-        <td class="px-2 py-1.5 font-medium">${currency.format(row.balance)}</td>
+        <td class="px-2 py-1.5">${formatCurrencyAdaptive(row.emi, 18)}</td>
+        <td class="px-2 py-1.5 text-emerald-600">${formatCurrencyAdaptive(row.principal, 18)}</td>
+        <td class="px-2 py-1.5 text-amber-600">${formatCurrencyAdaptive(row.interest, 18)}</td>
+        <td class="px-2 py-1.5 font-medium">${formatCurrencyAdaptive(row.balance, 18)}</td>
       `;
       amortKeyBodyEl.appendChild(tr);
     }
@@ -238,6 +305,24 @@
     const principal = parseFloat(loanAmountEl?.value) || 0;
     const months = parseInt(tenureMonthsEl?.value) || 120;
     const rate = parseFloat(interestRateEl?.value) || 10;
+
+    // Enforce a max principal (configurable per currency)
+    const maxPrincipal = getMaxPrincipal();
+    if (principal > maxPrincipal) {
+      const maxStr = currency.format(maxPrincipal);
+      if (monthlyPaymentEl) monthlyPaymentEl.textContent = 'Max: ' + formatCompactValue(maxPrincipal);
+      fitEmiText(monthlyPaymentEl ? monthlyPaymentEl.textContent : '');
+      if (principalTotalEl) principalTotalEl.textContent = '≤ ' + formatCompactValue(maxPrincipal);
+      if (interestTotalEl) interestTotalEl.textContent = '—';
+      if (totalCostEl) totalCostEl.textContent = '—';
+      if (interestPctEl) interestPctEl.textContent = '—';
+      if (interestSummaryLineEl) interestSummaryLineEl.textContent = 'Please enter a loan amount up to ' + maxStr + ' to calculate accurately.';
+      if (chartHintEl) chartHintEl.textContent = 'Loan amount exceeds supported range.';
+      updateChart(0, 0);
+      updateAmortPreview(null, 0);
+      updateAiInsight(null);
+      return;
+    }
     
     console.log('Values: P=' + principal + ', M=' + months + ', R=' + rate);
     
@@ -265,15 +350,31 @@
     
     console.log('EMI calculated:', result.emi);
     
-    // Display EMI
-    if (monthlyPaymentEl) monthlyPaymentEl.textContent = currency.format(result.emi);
-    if (principalTotalEl) principalTotalEl.textContent = currency.format(principal);
-    if (interestTotalEl) interestTotalEl.textContent = currency.format(result.totalInterest);
-    if (totalCostEl) totalCostEl.textContent = currency.format(result.totalAmount);
+    // Display EMI (and guard against overflow)
+    if (!Number.isFinite(result.emi) || !Number.isFinite(result.totalAmount) || !Number.isFinite(result.totalInterest)) {
+      if (monthlyPaymentEl) monthlyPaymentEl.textContent = 'Result too large';
+      fitEmiText(monthlyPaymentEl ? monthlyPaymentEl.textContent : '');
+      if (principalTotalEl) principalTotalEl.textContent = currency.format(principal);
+      if (interestTotalEl) interestTotalEl.textContent = '—';
+      if (totalCostEl) totalCostEl.textContent = '—';
+      if (interestPctEl) interestPctEl.textContent = '—';
+      if (interestSummaryLineEl) interestSummaryLineEl.textContent = 'Try a smaller loan amount or shorter tenure.';
+      if (chartHintEl) chartHintEl.textContent = 'Values overflowed the calculator range.';
+      updateChart(0, 0);
+      updateAmortPreview(null, 0);
+      updateAiInsight(null);
+      return;
+    }
+
+    if (monthlyPaymentEl) monthlyPaymentEl.textContent = formatCurrencyAdaptive(result.emi, 22);
+    fitEmiText(monthlyPaymentEl ? monthlyPaymentEl.textContent : '');
+    if (principalTotalEl) principalTotalEl.textContent = formatCurrencyAdaptive(principal, 18);
+    if (interestTotalEl) interestTotalEl.textContent = formatCurrencyAdaptive(result.totalInterest, 18);
+    if (totalCostEl) totalCostEl.textContent = formatCurrencyAdaptive(result.totalAmount, 18);
     
     const interestPct = Math.round((result.totalInterest / principal) * 100);
     if (interestPctEl) interestPctEl.textContent = interestPct + '%';
-    if (interestSummaryLineEl) interestSummaryLineEl.textContent = 'Total interest: ' + currency.format(result.totalInterest) + ' over the full term';
+    if (interestSummaryLineEl) interestSummaryLineEl.textContent = 'Total interest: ' + formatCurrencyAdaptive(result.totalInterest, 28) + ' over the full term';
     if (chartHintEl) chartHintEl.textContent = 'Principal vs total interest over the full term.';
     
     // Update chart
@@ -307,7 +408,7 @@
     
     const dtiPercent = Math.round((emi / monthlyIncome) * 100);
     
-    if (affordabilityTextEl) affordabilityTextEl.textContent = currency.format(emi) + '/month ≈ ' + dtiPercent + '% of estimated income';
+    if (affordabilityTextEl) affordabilityTextEl.textContent = formatCurrencyAdaptive(emi, 22) + '/month ≈ ' + dtiPercent + '% of estimated income';
     
     const width = Math.min(dtiPercent / 60 * 100, 100);
     if (affordMeterFillEl) affordMeterFillEl.style.width = width + '%';
@@ -326,7 +427,7 @@
     const stressResult = calculateEMI(principal, months, rate + stressAdd);
     if (stressResult && stressResultEl) {
       const delta = stressResult.emi - currentEmi;
-      stressResultEl.textContent = 'If APR rises by ' + stressAdd.toFixed(1) + '%, EMI becomes ~' + currency.format(stressResult.emi) + ' (Δ ' + currency.format(delta) + ').';
+      stressResultEl.textContent = 'If APR rises by ' + stressAdd.toFixed(1) + '%, EMI becomes ~' + formatCurrencyAdaptive(stressResult.emi, 24) + ' (Δ ' + formatCurrencyAdaptive(delta, 24) + ').';
     }
   }
 
@@ -343,7 +444,7 @@
       const shorter = calculateEMI(principal, months - 12, rate);
       if (shorter && aiSavingsLineEl) {
         const savings = result.totalInterest - shorter.totalInterest;
-        aiSavingsLineEl.textContent = 'Reducing tenure by 1 year could save about ' + currency.format(savings) + ' in interest.';
+        aiSavingsLineEl.textContent = 'Reducing tenure by 1 year could save about ' + formatCurrencyAdaptive(savings, 26) + ' in interest.';
       }
     }
     
@@ -512,6 +613,11 @@
     // Update currency symbols in inputs
     if (currencySymbolEl) currencySymbolEl.textContent = currentSymbol;
     if (incomeCurrencySymbolEl) incomeCurrencySymbolEl.textContent = currentSymbol;
+
+    // Apply per-currency max to the loan input (so users get immediate feedback)
+    if (loanAmountEl) {
+      loanAmountEl.max = String(getMaxPrincipal());
+    }
     
     // Update amount chips
     if (amountChipsEl) {
