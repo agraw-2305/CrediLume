@@ -10,6 +10,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
@@ -17,9 +18,59 @@
       }
     }
   </script>
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <style>
+    :root { color-scheme: light; }
+    html.dark { color-scheme: dark; }
+
+    /* Dark-mode overrides for common Tailwind utility classes used in this page.
+       This keeps the existing markup intact while improving contrast/readability. */
+    html.dark body { background-color: rgb(2 6 23) !important; color: rgb(226 232 240) !important; }
+    html.dark .bg-white { background-color: rgb(15 23 42) !important; }
+    html.dark .bg-white\/80 { background-color: rgba(15, 23, 42, 0.82) !important; }
+    html.dark .bg-slate-50 { background-color: rgb(2 6 23) !important; }
+    html.dark .bg-slate-100 { background-color: rgb(30 41 59) !important; }
+    html.dark .bg-slate-200 { background-color: rgb(51 65 85) !important; }
+    html.dark .text-slate-900 { color: rgb(226 232 240) !important; }
+    html.dark .text-slate-800 { color: rgb(226 232 240) !important; }
+    html.dark .text-slate-700 { color: rgb(203 213 225) !important; }
+    html.dark .text-slate-600 { color: rgb(148 163 184) !important; }
+    html.dark .text-slate-500 { color: rgb(148 163 184) !important; }
+    html.dark .text-slate-400 { color: rgb(148 163 184) !important; }
+    html.dark .border-slate-200 { border-color: rgb(51 65 85) !important; }
+    html.dark .border-slate-200\/80 { border-color: rgba(51, 65, 85, 0.85) !important; }
+    html.dark .border-slate-100 { border-color: rgb(51 65 85) !important; }
+    html.dark .ring-slate-200 { --tw-ring-color: rgb(51 65 85) !important; }
+
+    /* Inputs / placeholders */
+    html.dark input, html.dark select, html.dark textarea {
+      background-color: rgb(15 23 42) !important;
+      color: rgb(226 232 240) !important;
+      border-color: rgb(51 65 85) !important;
+    }
+    html.dark input::placeholder, html.dark textarea::placeholder { color: rgb(100 116 139) !important; }
+
+    /* Slider tweaks in dark mode */
+    html.dark input[type="range"] {
+      background: linear-gradient(to right, rgb(51 65 85), rgb(51 65 85)) !important;
+    }
+
+    /* Scrollbar in dark mode */
+    html.dark ::-webkit-scrollbar-track { background: rgb(2 6 23); }
+    html.dark ::-webkit-scrollbar-thumb { background: rgb(51 65 85); }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: rgb(71 85 105); }
+
+    /* Smart Advisor Modal */
+    html.dark .advisor-modal { background: rgb(15 23 42) !important; }
+    html.dark .advisor-backdrop { background: rgba(2, 6, 23, 0.7) !important; }
+
+    /* Theme toggle icon swap */
+    .theme-icon-sun { display: none; }
+    html.dark .theme-icon-sun { display: inline-block; }
+    html.dark .theme-icon-moon { display: none; }
+
     /* Custom Range Slider */
     input[type="range"] {
       -webkit-appearance: none;
@@ -169,17 +220,40 @@
             </a>
           </nav>
         </div>
-        <!-- Right side - Powered by badge -->
-        <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500">
-          <span>Powered by</span>
-          <span class="font-semibold text-slate-700 flex items-center gap-1">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#4285F4"/>
-              <path d="M2 17L12 22L22 17" stroke="#34A853" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M2 12L12 17L22 12" stroke="#FBBC05" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Right side - Theme toggle + AI icon -->
+        <div class="flex items-center gap-3 text-xs text-slate-500">
+          <button
+            type="button"
+            data-theme-toggle
+            aria-pressed="false"
+            class="hidden sm:inline-flex items-center justify-center rounded-lg bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 hover:scale-105 transition"
+          >
+            <span class="sr-only" data-theme-label>Switch to dark mode</span>
+            <!-- Moon (shown in light mode) -->
+            <svg class="theme-icon-moon h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
             </svg>
-            Gemini AI
-          </span>
+            <!-- Sun (shown in dark mode) -->
+            <svg class="theme-icon-sun h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+            </svg>
+          </button>
+
+          <div class="hidden sm:flex items-center">
+            <button
+              type="button"
+              onclick="openChatbot()"
+              class="inline-flex items-center justify-center rounded-lg bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 hover:scale-105 transition focus:outline-none focus:ring-4 focus:ring-slate-200"
+              title="Open AI assistant"
+              aria-label="Open AI assistant"
+            >
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2l1.2 4.2L17.4 7.4l-4.2 1.2L12 12.8l-1.2-4.2L6.6 7.4l4.2-1.2L12 2z" />
+                <path d="M19 11l.7 2.4 2.3.6-2.3.6L19 17l-.7-2.4-2.3-.6 2.3-.6L19 11z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -814,7 +888,7 @@
   </main>
 
   <!-- ═══════════════════════════════════════════════════════════════════════════ -->
-  <!-- GEMINI CHATBOT - Floating Button -->
+  <!-- AI ASSISTANT - Floating Button -->
   <!-- ═══════════════════════════════════════════════════════════════════════════ -->
   <button
     id="advisorBtn"
@@ -846,7 +920,7 @@
             <h2 id="advisorTitle" class="text-lg font-bold">EMI & Loan Expert</h2>
             <p class="text-xs text-white/80 flex items-center gap-1">
               <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Powered by Gemini AI
+              AI Assistant
             </p>
           </div>
         </div>

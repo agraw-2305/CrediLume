@@ -10,6 +10,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
@@ -17,9 +18,53 @@
       }
     }
   </script>
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <style>
+    :root { color-scheme: light; }
+    html.dark { color-scheme: dark; }
+
+    /* Dark-mode overrides for this page (keeps existing Tailwind markup intact). */
+    html.dark body {
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(99,102,241,0.18), transparent 60%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(16,185,129,0.12), transparent 55%),
+                  linear-gradient(135deg, rgb(2 6 23), rgb(15 23 42));
+      color: rgb(226 232 240) !important;
+    }
+    html.dark .bg-white { background-color: rgb(15 23 42) !important; }
+    html.dark .bg-white\/80 { background-color: rgba(15, 23, 42, 0.82) !important; }
+    html.dark .text-slate-900 { color: rgb(226 232 240) !important; }
+    html.dark .text-slate-700 { color: rgb(203 213 225) !important; }
+    html.dark .text-slate-600 { color: rgb(148 163 184) !important; }
+    html.dark .text-slate-500 { color: rgb(148 163 184) !important; }
+    html.dark .text-slate-400 { color: rgb(148 163 184) !important; }
+    html.dark .border-slate-200 { border-color: rgb(51 65 85) !important; }
+    html.dark .border-slate-200\/50 { border-color: rgba(51, 65, 85, 0.6) !important; }
+    html.dark .border-slate-100 { border-color: rgb(51 65 85) !important; }
+    html.dark .ring-slate-200 { --tw-ring-color: rgb(51 65 85) !important; }
+
+    /* Inputs */
+    html.dark input, html.dark select, html.dark textarea {
+      background-color: rgb(15 23 42) !important;
+      color: rgb(226 232 240) !important;
+      border-color: rgb(51 65 85) !important;
+    }
+    html.dark input::placeholder, html.dark textarea::placeholder { color: rgb(100 116 139) !important; }
+
+    /* Slider track in dark mode */
+    html.dark input[type="range"] { background: rgb(51 65 85) !important; }
+
+    /* Scrollbar in dark mode */
+    html.dark ::-webkit-scrollbar-track { background: rgb(2 6 23); }
+    html.dark ::-webkit-scrollbar-thumb { background: rgb(51 65 85); }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: rgb(71 85 105); }
+
+    /* Theme toggle icon swap */
+    .theme-icon-sun { display: none; }
+    html.dark .theme-icon-sun { display: inline-block; }
+    html.dark .theme-icon-moon { display: none; }
+
     /* Custom Range Slider */
     input[type="range"] {
       -webkit-appearance: none;
@@ -97,9 +142,29 @@
             <span class="rounded-md bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 uppercase tracking-wide">Pro</span>
           </div>
         </a>
-        <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-500">
-          <svg class="h-4 w-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-          <span>Bank-grade security</span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            data-theme-toggle
+            aria-pressed="false"
+            class="hidden sm:inline-flex items-center justify-center rounded-lg bg-slate-100 p-2 text-slate-700 hover:bg-slate-200 transition"
+          >
+            <span class="sr-only" data-theme-label>Switch to dark mode</span>
+            <!-- Moon (shown in light mode) -->
+            <svg class="theme-icon-moon h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+            </svg>
+            <!-- Sun (shown in dark mode) -->
+            <svg class="theme-icon-sun h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+            </svg>
+          </button>
+
+          <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-500">
+            <svg class="h-4 w-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            <span>Bank-grade security</span>
+          </div>
         </div>
       </div>
     </div>
