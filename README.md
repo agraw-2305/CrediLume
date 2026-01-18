@@ -1,130 +1,40 @@
-CrediLume — Loan Eligibility & EMI Calculator
+🌟 CrediLume
+💡 Loan Eligibility & EMI Calculator
 
-CrediLume is a Flask-based web application that provides loan eligibility prediction, EMI estimation, and affordability checks using a trained machine learning model.
-It also supports optional AI-generated guidance using Google Gemini when configured.
+✨ Overview
 
-Overview
+CrediLume is a Flask-based web application that helps users understand
+loan eligibility, EMI, and affordability using a trained machine learning model.
 
-CrediLume combines:
+It also supports optional AI-powered guidance via Google Gemini, while remaining fully functional without any AI configuration.
 
-Loan eligibility prediction (machine learning)
+🔍 What CrediLume Offers
 
-EMI calculation and affordability analysis (DTI-based)
+🤖 ML-based loan eligibility prediction
 
-Optional AI-powered guidance via Google Gemini
+💸 EMI, interest & total repayment calculation
 
-JSON-based endpoints for dynamic UI updates
+📊 Debt-to-Income (DTI) affordability checks
 
-The application is designed to remain fully functional even when AI features are disabled.
+🧠 Explainable outcomes (not just yes/no)
 
-Features
+⚡ JSON API endpoints for dynamic UI updates
 
-Predicts loan approval likelihood using a trained ML model
+🔐 Optional Gemini AI guidance (with fallback logic)
 
-Calculates EMI, total interest, and total repayment
-
-Applies debt-to-income (DTI) guardrails
-
-Supports both HTML form submission and JSON-based API usage
-
-Graceful fallback behavior when AI features are not enabled
-
-Requirements
-
-Python 3.10 or higher
-
-Trained ML artifacts:
-
-loan_model.pkl
-
-features.pkl
-
-Optional
-
-GEMINI_API_KEY environment variable (enables AI guidance)
-
-If no Gemini key is set, the app automatically uses built-in fallback logic.
-
-Quick Start (Windows)
-1. Create and activate a virtual environment
-
-PowerShell
-
-python -m venv .venv
-& .\.venv\Scripts\Activate.ps1
-
-2. Install dependencies
-pip install -r requirements.txt
-
-3. (Optional) Enable Gemini AI
-$env:GEMINI_API_KEY="YOUR_KEY_HERE"
-
-
-GOOGLE_API_KEY is also supported, but GEMINI_API_KEY is recommended.
-Do not commit API keys to version control.
-
-4. Run the application
-python app.py
-
-
-Open in browser:
-http://127.0.0.1:5000
-
-You may also use run.ps1 or run.bat for convenience.
-
-Deployment
-
-Pushing this repository to GitHub does not automatically make the app publicly accessible.
-To obtain a public URL, deploy it to a hosting platform.
-
-Option A: Render (recommended)
-
-This repository includes a render.yaml configuration.
-
-Go to Render → New + → Web Service
-
-Connect your GitHub repository
-
-Render will automatically detect:
-
-Build command: pip install -r requirements.txt
-
-Start command:
-gunicorn app:app --bind 0.0.0.0:$PORT
-
-Set environment variables:
-
-FLASK_DEBUG=0
-
-FLASK_RELOADER=0
-
-GEMINI_API_KEY (optional)
-
-Deploy and open the generated URL
-
-Note:
-loan_model.pkl and features.pkl must be present in the project root, as they are loaded at runtime.
-
-Option B: Other Platforms (Railway, Fly.io, Heroku-like)
-
-Use the same start command:
-
-gunicorn app:app --bind 0.0.0.0:$PORT
-
-API Routes
-
-GET / — Web UI
-
-GET /health — Health check (returns ok)
-
-POST /predict — Form-based submission (HTML response)
-
-POST /predict_json — JSON API endpoint (AJAX / dynamic UI)
-
-Project Structure
+🛠️ Tech Stack
+Layer	Technology
+Backend	Flask (Python)
+Frontend	HTML, CSS, JavaScript
+ML	Scikit-learn
+Server	Gunicorn
+Hosting	Render
+📁 Project Structure
 .
 ├── app.py
 ├── loan_fin.py
+├── loan_model.pkl
+├── features.pkl
 ├── requirements.txt
 ├── run.bat
 ├── run.ps1
@@ -134,15 +44,73 @@ Project Structure
     ├── index.html
     └── premium.html
 
-Troubleshooting
+🚀 Quick Start (Windows)
+1️⃣ Create a virtual environment
+python -m venv .venv
+& .\.venv\Scripts\Activate.ps1
 
-ML artifacts not found
-Ensure loan_model.pkl and features.pkl exist in the project root.
+2️⃣ Install dependencies
+pip install -r requirements.txt
 
-Gemini AI not responding
-Confirm GEMINI_API_KEY is set in the environment where Flask is running.
+3️⃣ (Optional) Enable Gemini AI ✨
+$env:GEMINI_API_KEY="YOUR_KEY_HERE"
 
-Disclaimer
 
-This project provides estimates and informational output only.
-It does not constitute financial advice. Loan eligibility, interest rates, and repayment terms vary by lender and jurisdiction.
+🔐 Keep API keys out of git history
+GOOGLE_API_KEY is also supported
+
+4️⃣ Run the app ▶️
+python app.py
+
+
+🌐 Open: http://127.0.0.1:5000
+
+🌍 Deployment
+⭐ Render (Recommended)
+
+This repository includes a render.yaml file.
+
+Build: pip install -r requirements.txt
+
+Start:
+
+gunicorn app:app --bind 0.0.0.0:$PORT
+
+
+Environment variables:
+
+FLASK_DEBUG=0
+
+FLASK_RELOADER=0
+
+GEMINI_API_KEY (optional)
+
+📌 Ensure loan_model.pkl and features.pkl are present at runtime.
+
+🔌 API Endpoints
+Method	Route	Description
+GET	/	Web UI
+GET	/health	Health check
+POST	/predict	Form-based prediction
+POST	/predict_json	JSON API response
+🧪 Troubleshooting
+
+❌ ML model not loading
+→ Ensure loan_model.pkl & features.pkl exist in project root
+
+🤖 Gemini AI not working
+→ Confirm GEMINI_API_KEY is set in your environment
+
+⚠️ Disclaimer
+
+📌 This project provides estimates and informational output only.
+It does not constitute financial advice. Loan terms vary by lender and region.
+
+🤝 Contributing
+
+Pull requests and suggestions are welcome!
+Fork the repo and feel free to improve or extend functionality.
+
+📄 License
+
+📝 MIT License
