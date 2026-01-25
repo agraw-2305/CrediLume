@@ -1,35 +1,45 @@
-🌟 CrediLume
-💡 Loan Eligibility & EMI Calculator
+# 🌟 CrediLume
+### 💡 Loan Eligibility & EMI Calculator
 
-✨ Overview
+## ✨ Overview
 
-CrediLume is a Flask-based web application that helps users understand
-loan eligibility, EMI, and affordability using a trained machine learning model.
+**CrediLume** is a production-ready, Flask-based web application designed to help users assess **loan eligibility, affordability, and repayment details** using a trained machine learning model.
 
-It also supports optional AI-powered guidance via Google Gemini, while remaining fully functional without any AI configuration.
+The application goes beyond a simple *approve / reject* response by providing **transparent financial insights**, including EMI breakdowns and debt-to-income (DTI) analysis. It also supports **optional AI-powered guidance via Google Gemini**, while remaining fully functional without any AI configuration.
 
-🔍 What CrediLume Offers
+## 🔍 What CrediLume Offers
 
-🤖 ML-based loan eligibility prediction
+**🤖 ML-based Loan Eligibility Prediction**  
+Predicts approval likelihood using a trained Scikit-learn model.
 
-💸 EMI, interest & total repayment calculation
+**💸 EMI & Repayment Calculator**  
+Calculates monthly EMI, total interest, and total repayment amount.
 
-📊 Debt-to-Income (DTI) affordability checks
+**📊 Debt-to-Income (DTI) Analysis**  
+Evaluates affordability based on income and liabilities.
 
-🧠 Explainable outcomes (not just yes/no)
+**🧠 Explainable Results**  
+Provides reasoning and financial context instead of only binary outcomes.
 
-⚡ JSON API endpoints for dynamic UI updates
+**⚡ JSON API Support**  
+Enables dynamic frontend updates and external integrations.
 
-🔐 Optional Gemini AI guidance (with fallback logic)
+**🔐 Optional AI Guidance (Google Gemini)**  
+Enhances explanations and user guidance with automatic fallback when AI is not configured.
 
-🛠️ Tech Stack
-Layer	Technology
-Backend	Flask (Python)
-Frontend	HTML, CSS, JavaScript
-ML	Scikit-learn
-Server	Gunicorn
-Hosting	Render
-📁 Project Structure
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|------|-----------|
+| Backend | Flask (Python) |
+| Frontend | HTML, CSS, JavaScript |
+| Machine Learning | Scikit-learn |
+| Server | Gunicorn |
+| Hosting | Render |
+
+## 📁 Project Structure
+
+```text
 .
 ├── app.py
 ├── loan_fin.py
@@ -43,74 +53,74 @@ Hosting	Render
 └── templates/
     ├── index.html
     └── premium.html
+```
+## 🚀 Quick Start (Windows)
 
-🚀 Quick Start (Windows)
-1️⃣ Create a virtual environment
+Step 1: Create and activate a virtual environment
+```
 python -m venv .venv
 & .\.venv\Scripts\Activate.ps1
-
-2️⃣ Install dependencies
+```
+Step 2: Install dependencies
+```
 pip install -r requirements.txt
-
-3️⃣ (Optional) Enable Gemini AI ✨
-$env:GEMINI_API_KEY="YOUR_KEY_HERE"
-
-
-🔐 Keep API keys out of git history
-GOOGLE_API_KEY is also supported
-
-4️⃣ Run the app ▶️
+```
+Step 4: Run the application
+```
 python app.py
+```
+Open in your browser:
+http://127.0.0.1:5000
 
+## 🌍 Deployment
+Render (Recommended)
 
-🌐 Open: http://127.0.0.1:5000
-
-🌍 Deployment
-⭐ Render (Recommended)
-
-This repository includes a render.yaml file.
-
-Build: pip install -r requirements.txt
-
-Start:
-
+This repository includes a render.yaml configuration for deployment on Render.
+Build Command
+```
+pip install -r requirements.txt
+```
+Start Command
+```
 gunicorn app:app --bind 0.0.0.0:$PORT
-
-
-Environment variables:
-
+```
+Environment Variables
+```
 FLASK_DEBUG=0
-
 FLASK_RELOADER=0
-
 GEMINI_API_KEY (optional)
+```
+Ensure loan_model.pkl and features.pkl are available at runtime.
 
-📌 Ensure loan_model.pkl and features.pkl are present at runtime.
+## 🔌 API Endpoints
 
-🔌 API Endpoints
-Method	Route	Description
-GET	/	Web UI
-GET	/health	Health check
-POST	/predict	Form-based prediction
-POST	/predict_json	JSON API response
-🧪 Troubleshooting
+Method	    Endpoint	   Description
+GET          	/	        Web UI
+GET	        /health	        Health check
+POST	    /predict	    Form-based prediction
+POST	 /predict_json	    JSON API response
 
-❌ ML model not loading
-→ Ensure loan_model.pkl & features.pkl exist in project root
 
-🤖 Gemini AI not working
-→ Confirm GEMINI_API_KEY is set in your environment
+## 🧪 Troubleshooting
 
-⚠️ Disclaimer
+ML model not loading
+Ensure loan_model.pkl and features.pkl exist in the project root.
 
-📌 This project provides estimates and informational output only.
-It does not constitute financial advice. Loan terms vary by lender and region.
+Gemini AI not responding
+Verify that GEMINI_API_KEY is correctly set in the environment.
 
-🤝 Contributing
+## ⚠️ Disclaimer
 
-Pull requests and suggestions are welcome!
-Fork the repo and feel free to improve or extend functionality.
+CrediLume provides estimates for informational purposes only.
+It does not constitute financial, legal, or lending advice.
+Actual loan approval and terms depend on individual lenders and regional policies.
 
-📄 License
+## 🤝 Contributing
 
-📝 MIT License
+Contributions are welcome.
+Feel free to fork the repository, submit pull requests, or suggest improvements.
+
+## 📄 License
+
+This project is licensed under the MIT License.
+You are free to use, modify, and distribute it with proper attribution.
